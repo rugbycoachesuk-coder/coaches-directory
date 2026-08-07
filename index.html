@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>U13 Rugby Coaches Directory</title>
+<title>Scrumbase — Rugby Coaches Directory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root {
     --pitch-dark: #0B2545;
@@ -199,6 +198,14 @@
     color: var(--pitch-dark);
   }
 
+  .tag-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
   .region-tag {
     font-size: 11.5px;
     font-weight: 700;
@@ -210,6 +217,11 @@
     border-radius: 100px;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  .region-tag.age-tag {
+    background: var(--amber);
+    color: var(--pitch-dark);
   }
 
   .coach-line {
@@ -301,15 +313,134 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
+  /* ---------- Magic-link gate ---------- */
+  .gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--pitch-dark) 0px, var(--pitch-dark) 46px,
+        var(--pitch) 46px, var(--pitch) 92px
+      );
+  }
+
+  .gate-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 32px 28px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .gate-eyebrow {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber-dark);
+    margin: 0 0 10px;
+  }
+
+  .gate-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--pitch-dark);
+    margin: 0 0 8px;
+  }
+
+  .gate-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+
+  #gateForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #gateInput {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--chalk);
+    text-align: center;
+  }
+
+  #gateForm button {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: none;
+    background: var(--pitch);
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  #gateForm button:hover { background: var(--pitch-dark); }
+  #gateForm button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .gate-message {
+    color: var(--pitch-dark);
+    background: rgba(217,164,65,0.15);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 16px 0 0;
+  }
+
+  .gate-error {
+    color: #B4232C;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 14px 0 0;
+  }
 </style>
 </head>
 <body>
 
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <p class="gate-eyebrow">Scrumbase &middot; Members only</p>
+    <h2 class="gate-title" id="gateTitle">Sign in to view the directory</h2>
+    <p class="gate-sub" id="gateSub">Enter the email you used on the coaches form. We'll send you a link, no password needed.</p>
+
+    <form id="gateForm" autocomplete="off">
+      <input type="email" id="gateInput" placeholder="you@example.com" autofocus required>
+      <button type="submit" id="gateSubmitBtn">Send me a sign-in link</button>
+    </form>
+
+    <p id="gateMessage" class="gate-message" hidden></p>
+    <p id="gateError" class="gate-error" hidden></p>
+  </div>
+</div>
+
+<div id="siteContent" hidden>
+
 <header class="hero">
   <div class="hero-inner">
-    <p class="eyebrow">U13 Rugby &middot; Coaches WhatsApp Group</p>
-    <h1>U13 Rugby Coaches Directory</h1>
-    <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region.</p>
+    <p class="eyebrow">Rugby Coaches WhatsApp Group</p>
+    <h1>Scrumbase Coaches Directory</h1>
+    <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region and age group.</p>
   </div>
 </header>
 
@@ -322,6 +453,10 @@
     <select id="regionFilter">
       <option value="">All regions</option>
     </select>
+    <select id="ageFilter">
+      <option value="">All age groups</option>
+    </select>
+    <select id="seasonFilter"></select>
     <span class="count-label" id="countLabel"></span>
   </div>
 </div>
@@ -332,21 +467,129 @@
   </div>
 </main>
 
-<footer>U13 Rugby Coaches Directory &mdash; for group members only. Please don't share outside the WhatsApp group.<br>&copy; 2026 Gareth Shaw</footer>
+<footer>Scrumbase Coaches Directory &mdash; for group members only. Please don't share outside the WhatsApp group.<br>&copy; 2026 Gareth Shaw</footer>
+
+</div>
 
 <script>
   // ---------------------------------------------------------------
-  // CONFIG: paste your published-to-web CSV link from Google Sheets
-  // (File > Share > Publish to web > select the sheet > CSV)
+  // CONFIG: your Worker's base URL (no trailing slash), used for both
+  // the directory data and the magic-link sign-in.
+  // Example: "https://scrumbase-data.yoursubdomain.workers.dev"
   // ---------------------------------------------------------------
-  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSCKciPkKHi0c8emvgtcRn0YI4zmO3iZduAwCe7faF7Tu-_-UCDNWWBX58XREKYnDHM-Bl8ySGWXHK/pub?gid=1945919190&single=true&output=csv";
+  const WORKER_BASE_URL = "REPLACE_WITH_YOUR_WORKER_URL";
+  const GATE_REMEMBER_DAYS = 30;
 
-  // Sample data shown until a real CSV link is added above.
+  function showSite() {
+    document.getElementById("gate").style.display = "none";
+    document.getElementById("siteContent").hidden = false;
+  }
+
+  function getRememberedAccess() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("scrumbase_access") || "null");
+      if (saved && saved.expires > Date.now()) return saved;
+    } catch (e) {}
+    return null;
+  }
+
+  function rememberAccess(email) {
+    try {
+      localStorage.setItem("scrumbase_access", JSON.stringify({
+        email,
+        expires: Date.now() + GATE_REMEMBER_DAYS * 24 * 60 * 60 * 1000
+      }));
+    } catch (e) {}
+  }
+
+  function showGateError(message) {
+    const errorEl = document.getElementById("gateError");
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+    document.getElementById("gateMessage").hidden = true;
+  }
+
+  function showGateMessage(message) {
+    const msgEl = document.getElementById("gateMessage");
+    msgEl.textContent = message;
+    msgEl.hidden = false;
+    document.getElementById("gateError").hidden = true;
+  }
+
+  async function verifyToken(token) {
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/verify?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (data.ok) {
+        rememberAccess(data.email);
+        showSite();
+      } else {
+        showGateError(data.error || "That link isn't valid. Request a new one below.");
+      }
+    } catch (e) {
+      showGateError("Couldn't verify that link. Check your connection and try again.");
+    }
+  }
+
+  function initGate() {
+    // Case 1: already signed in and remembered on this device.
+    const remembered = getRememberedAccess();
+    if (remembered) {
+      showSite();
+      return;
+    }
+
+    // Case 2: arrived via a magic link (?token=...).
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      // Clean the token out of the visible URL either way.
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      verifyToken(token);
+      return;
+    }
+
+    // Case 3: show the email-entry form.
+    document.getElementById("gateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("gateInput").value.trim();
+      const btn = document.getElementById("gateSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+
+      try {
+        const res = await fetch(`${WORKER_BASE_URL}/request-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        showGateMessage(data.message || "If that email is in the directory, a link is on its way.");
+      } catch (e) {
+        showGateError("Couldn't send the link right now. Try again shortly.");
+      }
+
+      btn.disabled = false;
+      btn.textContent = "Send me a sign-in link";
+    });
+  }
+
+  initGate();
+
+  // ---------------------------------------------------------------
+  // CONFIG: your data source
+  // Paste your Cloudflare Worker's URL here, with /data on the end.
+  // Example: "https://scrumbase-data.yoursubdomain.workers.dev/data"
+  // ---------------------------------------------------------------
+  const WORKER_DATA_URL = `${WORKER_BASE_URL}/data`;
+
+  // Sample data shown until a real data source is added above.
   const SAMPLE_ROWS = [
     {
       "Full name": "Sam Whitfield", "Mobile phone number": "07700 900111",
       "Email address": "sam@example.com", "Club name": "Nottingham Panthers RFC",
-      "Your role": "Head Coach", "Which region is your club in?": "Midlands",
+      "Your role": "Head Coach", "Age group": "U13", "Season": "2026/27", "Which region is your club in?": "Midlands",
       "Home ground / venue name": "Panthers Ground", "Full address including postcode": "12 Green Lane, Nottingham, NG1 5AA",
       "What3Words location (optional but recommended)": "///pitch.stripe.coach",
       "Parking available?": "Yes", "Changing rooms available?": "Yes", "Toilets available?": "Yes",
@@ -358,7 +601,7 @@
     {
       "Full name": "Priya Deshmukh", "Mobile phone number": "07700 900222",
       "Email address": "priya@example.com", "Club name": "Derby Colts RFC",
-      "Your role": "Team Manager", "Which region is your club in?": "Midlands",
+      "Your role": "Team Manager", "Age group": "U9", "Season": "2026/27", "Which region is your club in?": "Midlands",
       "Home ground / venue name": "Colts Field", "Full address including postcode": "8 Rugby Way, Derby, DE1 2BB",
       "What3Words location (optional but recommended)": "",
       "Parking available?": "Yes", "Changing rooms available?": "No", "Toilets available?": "Yes",
@@ -370,7 +613,7 @@
     {
       "Full name": "Alex Osei", "Mobile phone number": "07700 900333",
       "Email address": "alex@example.com", "Club name": "Leicester Lions Youth",
-      "Your role": "Fixtures Secretary", "Which region is your club in?": "Midlands",
+      "Your role": "Fixtures Secretary", "Age group": "U15", "Season": "2026/27", "Which region is your club in?": "Midlands",
       "Home ground / venue name": "Lions Park", "Full address including postcode": "45 Forest Road, Leicester, LE1 3CC",
       "What3Words location (optional but recommended)": "///cub.roar.field",
       "Parking available?": "No", "Changing rooms available?": "Yes", "Toilets available?": "Yes",
@@ -386,6 +629,8 @@
     email: ["email address"],
     club: ["club name"],
     role: ["your role", "other role"],
+    age: ["age group"],
+    season: ["season"],
     region: ["which region"],
     venue: ["home ground", "venue name"],
     address: ["full address"],
@@ -448,7 +693,10 @@
       <article class="card">
         <div class="card-top">
           <h2 class="club-name">${escapeHtml(r.club)}</h2>
-          ${r.region ? `<span class="region-tag">${escapeHtml(r.region)}</span>` : ""}
+          <div class="tag-group">
+            ${r.age ? `<span class="region-tag age-tag">${escapeHtml(r.age)}</span>` : ""}
+            ${r.region ? `<span class="region-tag">${escapeHtml(r.region)}</span>` : ""}
+          </div>
         </div>
         <p class="coach-line"><strong>${escapeHtml(r.name)}</strong> &middot; ${escapeHtml(r.role)}</p>
         <div class="contact-row">
@@ -480,13 +728,57 @@
     }
   }
 
+  function populateAgeFilter(rows) {
+    const select = document.getElementById("ageFilter");
+    const ages = [...new Set(rows.map(r => r.age).filter(Boolean))];
+    // Sort naturally so U7, U9, U11, U13... order correctly rather than alphabetically
+    ages.sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.replace(/\D/g, ""), 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return a.localeCompare(b);
+    });
+    for (const age of ages) {
+      const opt = document.createElement("option");
+      opt.value = age;
+      opt.textContent = age;
+      select.appendChild(opt);
+    }
+  }
+
+  function populateSeasonFilter(rows) {
+    const select = document.getElementById("seasonFilter");
+    const seasons = [...new Set(rows.map(r => r.season).filter(Boolean))].sort();
+
+    if (seasons.length === 0) {
+      select.style.display = "none";
+      return;
+    }
+
+    // Latest season sorts last (e.g. "2025/26" before "2026/27")
+    const currentSeason = seasons[seasons.length - 1];
+
+    for (const season of seasons) {
+      const opt = document.createElement("option");
+      opt.value = season;
+      opt.textContent = season === currentSeason ? `${season} (current)` : season;
+      select.appendChild(opt);
+    }
+    select.value = currentSeason;
+  }
+
   function renderList() {
     const query = document.getElementById("search").value.trim().toLowerCase();
     const region = document.getElementById("regionFilter").value;
+    const age = document.getElementById("ageFilter").value;
+    const seasonSelect = document.getElementById("seasonFilter");
+    const season = seasonSelect.style.display === "none" ? "" : seasonSelect.value;
 
     let rows = ALL_ROWS.filter(r => hasConsented(r.consent));
 
     if (region) rows = rows.filter(r => r.region === region);
+    if (age) rows = rows.filter(r => r.age === age);
+    if (season) rows = rows.filter(r => r.season === season);
     if (query) {
       rows = rows.filter(r =>
         r.name.toLowerCase().includes(query) ||
@@ -510,30 +802,34 @@
   function loadData(rawRows) {
     ALL_ROWS = rawRows.map(normaliseRow).filter(r => r.club || r.name);
     populateRegionFilter(ALL_ROWS);
+    populateAgeFilter(ALL_ROWS);
+    populateSeasonFilter(ALL_ROWS);
     renderList();
   }
 
   function loadSample(reason) {
     const content = document.getElementById("content");
-    const notice = `<div class="error" style="margin-bottom:14px;">${reason} Showing sample data below &mdash; add your published CSV link in the script to go live.</div>`;
+    const notice = `<div class="error" style="margin-bottom:14px;">${reason} Showing sample data below &mdash; add your Worker URL in the script to go live.</div>`;
     loadData(SAMPLE_ROWS);
     content.innerHTML = notice + content.innerHTML;
   }
 
-  if (SHEET_CSV_URL.startsWith("http")) {
-    Papa.parse(SHEET_CSV_URL, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => loadData(results.data),
-      error: () => loadSample("Couldn't load the live sheet.")
-    });
+  if (WORKER_DATA_URL.startsWith("http")) {
+    fetch(WORKER_DATA_URL)
+      .then(res => {
+        if (!res.ok) throw new Error("Bad response");
+        return res.json();
+      })
+      .then(rows => loadData(rows))
+      .catch(() => loadSample("Couldn't load live data."));
   } else {
     loadSample("No live data source configured yet.");
   }
 
   document.getElementById("search").addEventListener("input", renderList);
   document.getElementById("regionFilter").addEventListener("change", renderList);
+  document.getElementById("ageFilter").addEventListener("change", renderList);
+  document.getElementById("seasonFilter").addEventListener("change", renderList);
 </script>
 
 </body>
