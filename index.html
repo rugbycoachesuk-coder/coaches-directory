@@ -594,6 +594,18 @@
     margin-top: 6px;
   }
 
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 4px 10px;
+    margin-bottom: 14px;
+  }
+
+  .checkbox-grid .edit-checkbox-row {
+    margin: 3px 0;
+    font-size: 13px;
+  }
+
   .edit-checkbox-row {
     display: flex;
     align-items: center;
@@ -1009,7 +1021,8 @@
 
   function populateAgeFilter(rows) {
     const select = document.getElementById("ageFilter");
-    const ages = [...new Set(rows.map(r => r.age).filter(Boolean))];
+    const allAges = rows.flatMap(r => (r.age || "").split(",").map(a => a.trim()).filter(Boolean));
+    const ages = [...new Set(allAges)];
     // Sort naturally so U7, U9, U11, U13... order correctly rather than alphabetically
     ages.sort((a, b) => {
       const numA = parseInt(a.replace(/\D/g, ""), 10);
@@ -1056,7 +1069,7 @@
     let rows = ALL_ROWS.filter(r => hasConsented(r.consent));
 
     if (region) rows = rows.filter(r => r.region === region);
-    if (age) rows = rows.filter(r => r.age === age);
+    if (age) rows = rows.filter(r => (r.age || "").split(",").map(a => a.trim()).includes(age));
     if (season) rows = rows.filter(r => r.season === season);
     if (query) {
       rows = rows.filter(r =>
@@ -1368,13 +1381,29 @@
           <input type="text" id="su_role_other">
         </div>
         <div class="edit-field">
-          <label for="su_age">Age group *</label>
-          <select id="su_age" required>
-            <option value="">Choose one</option>
-            <option>U7</option><option>U9</option><option>U11</option>
-            <option>U13</option><option>U15</option><option>U17</option>
-            <option>Colts</option>
-          </select>
+          <label>Age group(s) *</label>
+          <p class="edit-field-note">Select all that apply if you coach more than one.</p>
+          <div class="checkbox-grid" id="su_age_group">
+            <label class="edit-checkbox-row"><input type="checkbox" value="U6"> U6</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U7"> U7</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U8"> U8</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U9"> U9</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U10"> U10</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U11"> U11</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U12"> U12</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U13"> U13</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U14"> U14</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U15"> U15</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U16"> U16</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U17"> U17</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="U18"> U18</label>
+            <label class="edit-checkbox-row"><input type="checkbox" value="Colts"> Colts</label>
+          </div>
+          <label>Which section(s)? *</label>
+          <div class="checkbox-grid">
+            <label class="edit-checkbox-row"><input type="checkbox" id="su_boys" value="Boys"> Boys</label>
+            <label class="edit-checkbox-row"><input type="checkbox" id="su_girls" value="Girls"> Girls</label>
+          </div>
         </div>
         <div class="edit-field">
           <label for="su_season">Which season is this for? *</label>
@@ -1491,6 +1520,24 @@
     if (document.getElementById("su_food_drinks").checked) foodParts.push("Drinks available to buy");
     if (document.getElementById("su_food_match").checked) foodParts.push("Match food provided");
 
+    const ageGroups = [...document.querySelectorAll('#su_age_group input:checked')].map(el => el.value);
+    const sections = [];
+    if (document.getElementById("su_boys").checked) sections.push("Boys");
+    if (document.getElementById("su_girls").checked) sections.push("Girls");
+
+    if (ageGroups.length === 0) {
+      const statusEl = document.getElementById("signupStatus");
+      statusEl.textContent = "Select at least one age group.";
+      statusEl.className = "edit-status error";
+      return;
+    }
+    if (sections.length === 0) {
+      const statusEl = document.getElementById("signupStatus");
+      statusEl.textContent = "Select at least one section (Boys/Girls).";
+      statusEl.className = "edit-status error";
+      return;
+    }
+
     const payload = {
       "Full name": document.getElementById("su_name").value.trim(),
       "Mobile phone number": document.getElementById("su_phone").value.trim(),
@@ -1498,7 +1545,8 @@
       "Club name": document.getElementById("su_club").value.trim(),
       "Your role": role,
       "Other role": role === "Other" ? document.getElementById("su_role_other").value.trim() : "",
-      "Age group": document.getElementById("su_age").value,
+      "Age group": ageGroups.join(", "),
+      "Section": sections.join(", "),
       "Season": document.getElementById("su_season").value,
       "Approximately how many registered players do you have this season?": document.getElementById("su_players").value.trim(),
       "How many teams do you usually field?": document.getElementById("su_teams").value,
