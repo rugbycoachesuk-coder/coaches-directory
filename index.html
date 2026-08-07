@@ -414,6 +414,23 @@
     font-weight: 600;
     margin: 14px 0 0;
   }
+
+  .gate-signup-link {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 18px 0 0;
+  }
+
+  .gate-signup-link button {
+    background: none;
+    border: none;
+    color: var(--pitch);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
   /* ---------- Edit my listing ---------- */
   .edit-listing-btn {
     margin-top: 18px;
@@ -658,6 +675,18 @@
 
     <p id="gateMessage" class="gate-message" hidden></p>
     <p id="gateError" class="gate-error" hidden></p>
+
+    <p class="gate-signup-link">New coach? <button type="button" id="openSignupBtn">Join the directory</button></p>
+  </div>
+</div>
+
+<div id="signupOverlay" class="edit-overlay" hidden>
+  <div class="edit-panel">
+    <div class="edit-panel-header">
+      <h2>Join the directory</h2>
+      <button id="closeSignupPanel" class="edit-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="signupPanelBody"></div>
   </div>
 </div>
 
@@ -1288,6 +1317,246 @@
   document.getElementById("editListingBtn").addEventListener("click", openEditPanel);
   document.getElementById("closeEditPanel").addEventListener("click", () => {
     document.getElementById("editPanelOverlay").hidden = true;
+  });
+
+  // ---------------------------------------------------------------
+  // Native signup (replaces the Google Form)
+  // ---------------------------------------------------------------
+  function renderSignupForm() {
+    const body = document.getElementById("signupPanelBody");
+    body.innerHTML = `
+      <form id="signupForm">
+        <div class="edit-field">
+          <label for="su_name">Full name *</label>
+          <input type="text" id="su_name" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_phone">Mobile phone number *</label>
+          <input type="tel" id="su_phone" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_email">Email address *</label>
+          <input type="email" id="su_email" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_club">Club name *</label>
+          <input type="text" id="su_club" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_role">Your role *</label>
+          <select id="su_role" required>
+            <option value="">Choose one</option>
+            <option>Head Coach</option>
+            <option>Assistant Coach</option>
+            <option>Coach</option>
+            <option>Team Manager</option>
+            <option>Fixtures Secretary</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="edit-field" id="su_role_other_wrap" hidden>
+          <label for="su_role_other">Other role, please specify *</label>
+          <input type="text" id="su_role_other">
+        </div>
+        <div class="edit-field">
+          <label for="su_age">Age group *</label>
+          <select id="su_age" required>
+            <option value="">Choose one</option>
+            <option>U7</option><option>U9</option><option>U11</option>
+            <option>U13</option><option>U15</option><option>U17</option>
+            <option>Colts</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label for="su_season">Which season is this for? *</label>
+          <select id="su_season" required>
+            <option value="">Choose one</option>
+            <option>2026/27</option>
+            <option>2027/28</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label for="su_players">Approximately how many registered players do you have this season? *</label>
+          <input type="text" id="su_players" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_teams">How many teams do you usually field? *</label>
+          <select id="su_teams" required>
+            <option value="">Choose one</option>
+            <option>1</option><option>2</option><option>3</option><option>4+</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label for="su_region">Which region is your club in? *</label>
+          <select id="su_region" required>
+            <option value="">Choose one</option>
+            <option>Midlands</option><option>North</option>
+            <option>London &amp; South East</option><option>South West</option>
+            <option>Wales</option><option>Scotland</option><option>Other</option>
+          </select>
+        </div>
+        <div class="edit-field" id="su_region_other_wrap" hidden>
+          <label for="su_region_other">Other region, please specify *</label>
+          <input type="text" id="su_region_other">
+        </div>
+        <div class="edit-field">
+          <label for="su_venue">Home ground / venue name *</label>
+          <input type="text" id="su_venue" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_address">Full address including postcode *</label>
+          <input type="text" id="su_address" required>
+        </div>
+        <div class="edit-field">
+          <label for="su_w3w">What3Words location (optional but recommended)</label>
+          <input type="text" id="su_w3w">
+        </div>
+
+        <h3 class="edit-section-title">Match day facilities</h3>
+        <div class="edit-field">
+          <label for="su_parking">Parking available? *</label>
+          <select id="su_parking" required><option value="">Choose one</option><option>Yes</option><option>No</option></select>
+        </div>
+        <div class="edit-field">
+          <label for="su_changing">Changing rooms available? *</label>
+          <select id="su_changing" required><option value="">Choose one</option><option>Yes</option><option>No</option></select>
+        </div>
+        <div class="edit-field">
+          <label for="su_toilets">Toilets available? *</label>
+          <select id="su_toilets" required><option value="">Choose one</option><option>Yes</option><option>No</option></select>
+        </div>
+        <div class="edit-field">
+          <label>Refreshments &amp; food available on match days?</label>
+          <label class="edit-checkbox-row"><input type="checkbox" id="su_food_drinks"> Drinks available to buy</label>
+          <label class="edit-checkbox-row"><input type="checkbox" id="su_food_match"> Match food provided</label>
+        </div>
+        <div class="edit-field">
+          <label for="su_cards">Card payments accepted? *</label>
+          <select id="su_cards" required><option value="">Choose one</option><option>Yes</option><option>No</option></select>
+        </div>
+        <div class="edit-field">
+          <label for="su_dogs">Dogs welcome? *</label>
+          <select id="su_dogs" required><option value="">Choose one</option><option>Yes</option><option>No</option></select>
+        </div>
+        <div class="edit-field">
+          <label for="su_surface">Pitch surface *</label>
+          <select id="su_surface" required><option value="">Choose one</option><option>Grass</option><option>AGP</option><option>Both</option></select>
+        </div>
+        <div class="edit-field">
+          <label for="su_notes">Anything visiting teams should know?</label>
+          <textarea id="su_notes"></textarea>
+        </div>
+
+        <label class="edit-checkbox-row">
+          <input type="checkbox" id="su_consent" required>
+          I agree that this information may be shared with members of the Rugby Coaches WhatsApp group for coaching, fixtures and rugby administration only. I understand it must not be shared outside the group. *
+        </label>
+
+        <!-- Honeypot: hidden from real people, bots often fill every field -->
+        <div style="position:absolute; left:-9999px;" aria-hidden="true">
+          <label for="su_hp">Leave this blank</label>
+          <input type="text" id="su_hp" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit" class="edit-save-btn" id="signupSubmitBtn">Join the directory</button>
+        <div id="signupStatus"></div>
+      </form>
+    `;
+
+    document.getElementById("su_role").addEventListener("change", (e) => {
+      document.getElementById("su_role_other_wrap").hidden = e.target.value !== "Other";
+    });
+    document.getElementById("su_region").addEventListener("change", (e) => {
+      document.getElementById("su_region_other_wrap").hidden = e.target.value !== "Other";
+    });
+
+    document.getElementById("signupForm").addEventListener("submit", handleSignupSubmit);
+  }
+
+  async function handleSignupSubmit(e) {
+    e.preventDefault();
+
+    const role = document.getElementById("su_role").value;
+    const region = document.getElementById("su_region").value;
+    const foodParts = [];
+    if (document.getElementById("su_food_drinks").checked) foodParts.push("Drinks available to buy");
+    if (document.getElementById("su_food_match").checked) foodParts.push("Match food provided");
+
+    const payload = {
+      "Full name": document.getElementById("su_name").value.trim(),
+      "Mobile phone number": document.getElementById("su_phone").value.trim(),
+      "Email address": document.getElementById("su_email").value.trim().toLowerCase(),
+      "Club name": document.getElementById("su_club").value.trim(),
+      "Your role": role,
+      "Other role": role === "Other" ? document.getElementById("su_role_other").value.trim() : "",
+      "Age group": document.getElementById("su_age").value,
+      "Season": document.getElementById("su_season").value,
+      "Approximately how many registered players do you have this season?": document.getElementById("su_players").value.trim(),
+      "How many teams do you usually field?": document.getElementById("su_teams").value,
+      "Which region is your club in?": region,
+      "Other region": region === "Other" ? document.getElementById("su_region_other").value.trim() : "",
+      "Home ground / venue name": document.getElementById("su_venue").value.trim(),
+      "Full address including postcode": document.getElementById("su_address").value.trim(),
+      "What3Words location (optional but recommended)": document.getElementById("su_w3w").value.trim(),
+      "Parking available?": document.getElementById("su_parking").value,
+      "Changing rooms available?": document.getElementById("su_changing").value,
+      "Toilets available?": document.getElementById("su_toilets").value,
+      "Refreshments & food available on match days?": foodParts.length ? foodParts.join(", ") : "None of the above",
+      "Card payments accepted?": document.getElementById("su_cards").value,
+      "Dogs welcome?": document.getElementById("su_dogs").value,
+      "Pitch surface": document.getElementById("su_surface").value,
+      "Anything visiting teams should know?": document.getElementById("su_notes").value.trim(),
+      "Consent": document.getElementById("su_consent").checked
+        ? "I agree that this information may be shared with members of the Rugby Coaches WhatsApp group for coaching, fixtures and rugby administration only."
+        : "",
+      "_hp": document.getElementById("su_hp").value,
+    };
+
+    const statusEl = document.getElementById("signupStatus");
+    const btn = document.getElementById("signupSubmitBtn");
+
+    if (!payload["Consent"]) {
+      statusEl.textContent = "You need to agree to the consent statement to join the directory.";
+      statusEl.className = "edit-status error";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Joining...";
+
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.ok && data.sessionToken) {
+        rememberAccess(data.email, data.sessionToken);
+        document.getElementById("signupOverlay").hidden = true;
+        showSite();
+        // Refresh directory data now that a new entry exists.
+        location.reload();
+      } else {
+        statusEl.textContent = data.error || "Couldn't save your details. Try again shortly.";
+        statusEl.className = "edit-status error";
+        btn.disabled = false;
+        btn.textContent = "Join the directory";
+      }
+    } catch (err) {
+      statusEl.textContent = "Couldn't reach the server. Check your connection and try again.";
+      statusEl.className = "edit-status error";
+      btn.disabled = false;
+      btn.textContent = "Join the directory";
+    }
+  }
+
+  document.getElementById("openSignupBtn").addEventListener("click", () => {
+    document.getElementById("signupOverlay").hidden = false;
+    renderSignupForm();
+  });
+  document.getElementById("closeSignupPanel").addEventListener("click", () => {
+    document.getElementById("signupOverlay").hidden = true;
   });
 </script>
 
