@@ -463,6 +463,10 @@
     overflow-y: auto;
   }
 
+  #signupOverlay {
+    z-index: 110; /* above .gate (100), since signup opens before sign-in */
+  }
+
   .edit-panel {
     background: #fff;
     border-radius: var(--radius);
