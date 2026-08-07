@@ -10,9 +10,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root {
-    --pitch-dark: #123529;
-    --pitch: #1B4A3A;
-    --pitch-light: #235846;
+    --pitch-dark: #0B2545;
+    --pitch: #14488C;
+    --pitch-light: #2E6FBE;
     --chalk: #F5F3EC;
     --chalk-dim: #E4E0D2;
     --amber: #D9A441;
@@ -20,7 +20,7 @@
     --ink: #1B2430;
     --ink-soft: #4A5560;
     --line: rgba(27,36,48,0.10);
-    --card-shadow: 0 1px 2px rgba(18,53,41,0.06), 0 8px 24px rgba(18,53,41,0.08);
+    --card-shadow: 0 1px 2px rgba(11,37,69,0.06), 0 8px 24px rgba(11,37,69,0.08);
     --radius: 14px;
   }
 
@@ -55,7 +55,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(18,53,41,0.35), rgba(18,53,41,0.75));
+    background: linear-gradient(180deg, rgba(11,37,69,0.35), rgba(11,37,69,0.75));
   }
 
   .hero-inner {
@@ -308,7 +308,7 @@
 <header class="hero">
   <div class="hero-inner">
     <p class="eyebrow">U13 Rugby &middot; Coaches WhatsApp Group</p>
-    <h1>Coaches Directory</h1>
+    <h1>U13 Rugby Coaches Directory</h1>
     <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region.</p>
   </div>
 </header>
@@ -332,14 +332,14 @@
   </div>
 </main>
 
-<footer>U13 Rugby Coaches Directory &mdash; for group members only. Please don't share outside the WhatsApp group.</footer>
+<footer>U13 Rugby Coaches Directory &mdash; for group members only. Please don't share outside the WhatsApp group.<br>&copy; 2026 Gareth Shaw</footer>
 
 <script>
   // ---------------------------------------------------------------
   // CONFIG: paste your published-to-web CSV link from Google Sheets
   // (File > Share > Publish to web > select the sheet > CSV)
   // ---------------------------------------------------------------
-  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT942xe0bn8P2O-F_cJ0UjNePfL7mWodIJ4vw8SQROY-6GSRW2UQnnHu18WNB34-ewJ7UOU0fFWX6oa/pub?gid=2047992474&single=true&output=csv";
+  const SHEET_CSV_URL = "REPLACE_WITH_YOUR_PUBLISHED_CSV_LINK";
 
   // Sample data shown until a real CSV link is added above.
   const SAMPLE_ROWS = [
@@ -433,13 +433,12 @@
   }
 
   function renderCard(r) {
-    const facilities = [
-      chip("Parking", isYes(r.parking)),
-      chip("Changing rooms", isYes(r.changing)),
-      chip("Toilets", isYes(r.toilets)),
-      chip("Card payments", isYes(r.cards)),
-      chip("Dogs welcome", isYes(r.dogs)),
-    ];
+    const facilities = [];
+    if (isYes(r.parking)) facilities.push(chip("Parking", true));
+    if (isYes(r.changing)) facilities.push(chip("Changing rooms", true));
+    if (isYes(r.toilets)) facilities.push(chip("Toilets", true));
+    if (isYes(r.cards)) facilities.push(chip("Card payments", true));
+    if (isYes(r.dogs)) facilities.push(chip("Dogs welcome", true));
     if (r.food && !r.food.toLowerCase().includes("none")) facilities.push(chip(r.food, true));
     if (r.surface) facilities.push(chip(r.surface, true));
 
@@ -462,7 +461,7 @@
           ${mapsUrl ? ` &middot; <a href="${mapsUrl}" target="_blank" rel="noopener">Map</a>` : ""}
           ${r.w3w ? ` &middot; ${escapeHtml(r.w3w)}` : ""}
         </p>` : ""}
-        <div class="chips">${facilities.join("")}</div>
+        ${facilities.length ? `<div class="chips">${facilities.join("")}</div>` : ""}
         ${r.notes ? `<div class="notes"><strong>Know before you go</strong>${escapeHtml(r.notes)}</div>` : ""}
       </article>
     `;
@@ -495,7 +494,7 @@
       );
     }
 
-    rows.sort((a, b) => a.name.localeCompare(b.name));
+    rows.sort((a, b) => a.club.localeCompare(b.club));
 
     const content = document.getElementById("content");
     document.getElementById("countLabel").textContent = rows.length + (rows.length === 1 ? " club" : " clubs");
