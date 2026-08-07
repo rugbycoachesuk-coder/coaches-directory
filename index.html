@@ -25,6 +25,11 @@
 
   * { box-sizing: border-box; }
 
+  /* Guarantee [hidden] always hides an element, even when a component's
+     own CSS (like display: flex on .edit-overlay) has equal specificity
+     and would otherwise win the tie-break. */
+  [hidden] { display: none !important; }
+
   body {
     margin: 0;
     font-family: 'Source Sans 3', sans-serif;
