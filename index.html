@@ -456,6 +456,18 @@
     background: rgba(245,243,236,0.22);
   }
 
+  .logout-btn {
+    margin-left: 10px;
+    background: transparent;
+    border-color: rgba(245,243,236,0.25);
+    opacity: 0.8;
+  }
+
+  .logout-btn:hover {
+    opacity: 1;
+    background: rgba(245,243,236,0.12);
+  }
+
   .edit-overlay {
     position: fixed;
     inset: 0;
@@ -719,6 +731,7 @@
     <h1>Scrumbase Coaches Directory</h1>
     <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region and age group.</p>
     <button id="editListingBtn" class="edit-listing-btn">Edit my listing</button>
+    <button id="logoutBtn" class="edit-listing-btn logout-btn">Log out</button>
   </div>
 </header>
 
@@ -1340,6 +1353,10 @@
   }
 
   document.getElementById("editListingBtn").addEventListener("click", openEditPanel);
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    try { localStorage.removeItem("scrumbase_access"); } catch (e) {}
+    location.reload();
+  });
   document.getElementById("closeEditPanel").addEventListener("click", () => {
     document.getElementById("editPanelOverlay").hidden = true;
   });
