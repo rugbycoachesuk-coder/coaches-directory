@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U13 Rugby Coaches Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --pitch-dark: #123529;
+    --pitch: #1B4A3A;
+    --pitch-light: #235846;
+    --chalk: #F5F3EC;
+    --chalk-dim: #E4E0D2;
+    --amber: #D9A441;
+    --amber-dark: #B4842F;
+    --ink: #1B2430;
+    --ink-soft: #4A5560;
+    --line: rgba(27,36,48,0.10);
+    --card-shadow: 0 1px 2px rgba(18,53,41,0.06), 0 8px 24px rgba(18,53,41,0.08);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--chalk);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Header: matchday team-sheet band ---------- */
+  header.hero {
+    position: relative;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--pitch) 0px, var(--pitch) 46px,
+        var(--pitch-light) 46px, var(--pitch-light) 92px
+      );
+    color: var(--chalk);
+    padding: 48px 24px 40px;
+    overflow: hidden;
+    border-bottom: 6px solid var(--amber);
+  }
+
+  header.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(18,53,41,0.35), rgba(18,53,41,0.75));
+  }
+
+  .hero-inner {
+    position: relative;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 12.5px;
+    color: var(--amber);
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 44px);
+    line-height: 1.05;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    max-width: 560px;
+    color: rgba(245,243,236,0.88);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ---------- Controls ---------- */
+  .controls {
+    max-width: 1080px;
+    margin: -26px auto 0;
+    padding: 0 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .controls-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 18px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-wrap {
+    flex: 1 1 240px;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.45;
+  }
+
+  #search {
+    width: 100%;
+    padding: 12px 14px 12px 40px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--chalk);
+    color: var(--ink);
+  }
+
+  #search:focus, select:focus, .chip:focus-visible {
+    outline: 2px solid var(--amber-dark);
+    outline-offset: 1px;
+  }
+
+  select {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--chalk);
+    color: var(--ink);
+  }
+
+  .count-label {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    white-space: nowrap;
+    padding-left: 4px;
+  }
+
+  /* ---------- Grid ---------- */
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--line);
+    padding: 20px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .club-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 19px;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--pitch-dark);
+  }
+
+  .region-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--pitch-dark);
+    color: var(--chalk);
+    padding: 4px 9px;
+    border-radius: 100px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .coach-line {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    margin: -6px 0 0;
+  }
+
+  .coach-line strong { color: var(--ink); font-weight: 600; }
+
+  .contact-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 14px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .contact-row a { text-decoration: none; font-weight: 600; color: var(--pitch); }
+  .contact-row a:hover { text-decoration: underline; }
+
+  .venue {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+
+  .venue strong { color: var(--ink); }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .chip {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 100px;
+    background: var(--chalk-dim);
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .chip.on {
+    background: rgba(217,164,65,0.18);
+    color: var(--amber-dark);
+  }
+
+  .chip .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  .notes {
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: var(--chalk);
+    border-radius: 10px;
+    padding: 10px 12px;
+    line-height: 1.5;
+  }
+
+  .notes strong { color: var(--ink); display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+
+  .empty, .error {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-soft);
+    font-size: 15px;
+  }
+
+  .error { color: #9C4221; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">U13 Rugby &middot; Coaches WhatsApp Group</p>
+    <h1>Coaches Directory</h1>
+    <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region.</p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="controls-card">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B2430" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Search by name or club..." autocomplete="off">
+    </div>
+    <select id="regionFilter">
+      <option value="">All regions</option>
+    </select>
+    <span class="count-label" id="countLabel"></span>
+  </div>
+</div>
+
+<main>
+  <div id="content">
+    <div class="empty">Loading directory&hellip;</div>
+  </div>
+</main>
+
+<footer>U13 Rugby Coaches Directory &mdash; for group members only. Please don't share outside the WhatsApp group.</footer>
+
+<script>
+  // ---------------------------------------------------------------
+  // CONFIG: paste your published-to-web CSV link from Google Sheets
+  // (File > Share > Publish to web > select the sheet > CSV)
+  // ---------------------------------------------------------------
+  const SHEET_CSV_URL = "REPLACE_WITH_YOUR_PUBLISHED_CSV_LINK";
+
+  // Sample data shown until a real CSV link is added above.
+  const SAMPLE_ROWS = [
+    {
+      "Full name": "Sam Whitfield", "Mobile phone number": "07700 900111",
+      "Email address": "sam@example.com", "Club name": "Nottingham Panthers RFC",
+      "Your role": "Head Coach", "Which region is your club in?": "Midlands",
+      "Home ground / venue name": "Panthers Ground", "Full address including postcode": "12 Green Lane, Nottingham, NG1 5AA",
+      "What3Words location (optional but recommended)": "///pitch.stripe.coach",
+      "Parking available?": "Yes", "Changing rooms available?": "Yes", "Toilets available?": "Yes",
+      "Refreshments & food available on match days?": "Drinks available to buy, Match food provided",
+      "Card payments accepted?": "No", "Dogs welcome?": "Yes", "Pitch surface": "Grass",
+      "Anything visiting teams should know?": "Park in the lower field on match days, main car park fills fast.",
+      "Consent": "I agree that the information in this form may be shared"
+    },
+    {
+      "Full name": "Priya Deshmukh", "Mobile phone number": "07700 900222",
+      "Email address": "priya@example.com", "Club name": "Derby Colts RFC",
+      "Your role": "Team Manager", "Which region is your club in?": "Midlands",
+      "Home ground / venue name": "Colts Field", "Full address including postcode": "8 Rugby Way, Derby, DE1 2BB",
+      "What3Words location (optional but recommended)": "",
+      "Parking available?": "Yes", "Changing rooms available?": "No", "Toilets available?": "Yes",
+      "Refreshments & food available on match days?": "None of the above",
+      "Card payments accepted?": "Yes", "Dogs welcome?": "No", "Pitch surface": "AGP",
+      "Anything visiting teams should know?": "Gate code is 2468. Please keep dogs on leads if passing through.",
+      "Consent": "I agree that the information in this form may be shared"
+    },
+    {
+      "Full name": "Alex Osei", "Mobile phone number": "07700 900333",
+      "Email address": "alex@example.com", "Club name": "Leicester Lions Youth",
+      "Your role": "Fixtures Secretary", "Which region is your club in?": "Midlands",
+      "Home ground / venue name": "Lions Park", "Full address including postcode": "45 Forest Road, Leicester, LE1 3CC",
+      "What3Words location (optional but recommended)": "///cub.roar.field",
+      "Parking available?": "No", "Changing rooms available?": "Yes", "Toilets available?": "Yes",
+      "Refreshments & food available on match days?": "Drinks available to buy",
+      "Card payments accepted?": "Yes", "Dogs welcome?": "Yes", "Pitch surface": "Both",
+      "Anything visiting teams should know?": "", "Consent": "I agree that the information in this form may be shared"
+    }
+  ];
+
+  const COLUMN_MAP = {
+    name: ["full name"],
+    phone: ["mobile phone"],
+    email: ["email address"],
+    club: ["club name"],
+    role: ["your role", "other role"],
+    region: ["which region"],
+    venue: ["home ground", "venue name"],
+    address: ["full address"],
+    w3w: ["what3words"],
+    parking: ["parking available"],
+    changing: ["changing rooms"],
+    toilets: ["toilets available"],
+    food: ["refreshments"],
+    cards: ["card payments"],
+    dogs: ["dogs welcome"],
+    surface: ["pitch surface"],
+    notes: ["anything visiting teams"],
+    consent: ["consent"]
+  };
+
+  function findValue(row, keys) {
+    const headers = Object.keys(row);
+    for (const h of headers) {
+      const hl = h.toLowerCase();
+      if (keys.some(k => hl.includes(k))) return (row[h] || "").toString().trim();
+    }
+    return "";
+  }
+
+  function normaliseRow(row) {
+    const out = {};
+    for (const field in COLUMN_MAP) out[field] = findValue(row, COLUMN_MAP[field]);
+    return out;
+  }
+
+  function isYes(val) { return val.trim().toLowerCase() === "yes"; }
+
+  function hasConsented(consentValue) {
+    const v = consentValue.toLowerCase();
+    if (!v) return true; // no consent column found - assume already filtered upstream
+    return v.includes("agree") && !v.includes("do not consent");
+  }
+
+  function chip(label, on) {
+    return `<span class="chip ${on ? "on" : ""}"><span class="dot"></span>${label}</span>`;
+  }
+
+  function escapeHtml(str) {
+    return (str || "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  }
+
+  function renderCard(r) {
+    const facilities = [
+      chip("Parking", isYes(r.parking)),
+      chip("Changing rooms", isYes(r.changing)),
+      chip("Toilets", isYes(r.toilets)),
+      chip("Card payments", isYes(r.cards)),
+      chip("Dogs welcome", isYes(r.dogs)),
+    ];
+    if (r.food && !r.food.toLowerCase().includes("none")) facilities.push(chip(r.food, true));
+    if (r.surface) facilities.push(chip(r.surface, true));
+
+    const mapsUrl = r.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.address)}` : "";
+
+    return `
+      <article class="card">
+        <div class="card-top">
+          <h2 class="club-name">${escapeHtml(r.club)}</h2>
+          ${r.region ? `<span class="region-tag">${escapeHtml(r.region)}</span>` : ""}
+        </div>
+        <p class="coach-line"><strong>${escapeHtml(r.name)}</strong> &middot; ${escapeHtml(r.role)}</p>
+        <div class="contact-row">
+          ${r.phone ? `<a href="tel:${escapeHtml(r.phone.replace(/\s+/g,""))}">${escapeHtml(r.phone)}</a>` : ""}
+          ${r.email ? `<a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>` : ""}
+        </div>
+        ${r.venue || r.address ? `
+        <p class="venue">
+          <strong>${escapeHtml(r.venue)}</strong>${r.venue && r.address ? "<br>" : ""}${escapeHtml(r.address)}
+          ${mapsUrl ? ` &middot; <a href="${mapsUrl}" target="_blank" rel="noopener">Map</a>` : ""}
+          ${r.w3w ? ` &middot; ${escapeHtml(r.w3w)}` : ""}
+        </p>` : ""}
+        <div class="chips">${facilities.join("")}</div>
+        ${r.notes ? `<div class="notes"><strong>Know before you go</strong>${escapeHtml(r.notes)}</div>` : ""}
+      </article>
+    `;
+  }
+
+  let ALL_ROWS = [];
+
+  function populateRegionFilter(rows) {
+    const select = document.getElementById("regionFilter");
+    const regions = [...new Set(rows.map(r => r.region).filter(Boolean))].sort();
+    for (const region of regions) {
+      const opt = document.createElement("option");
+      opt.value = region;
+      opt.textContent = region;
+      select.appendChild(opt);
+    }
+  }
+
+  function renderList() {
+    const query = document.getElementById("search").value.trim().toLowerCase();
+    const region = document.getElementById("regionFilter").value;
+
+    let rows = ALL_ROWS.filter(r => hasConsented(r.consent));
+
+    if (region) rows = rows.filter(r => r.region === region);
+    if (query) {
+      rows = rows.filter(r =>
+        r.name.toLowerCase().includes(query) ||
+        r.club.toLowerCase().includes(query)
+      );
+    }
+
+    rows.sort((a, b) => a.name.localeCompare(b.name));
+
+    const content = document.getElementById("content");
+    document.getElementById("countLabel").textContent = rows.length + (rows.length === 1 ? " club" : " clubs");
+
+    if (rows.length === 0) {
+      content.innerHTML = `<div class="empty">No clubs match that search. Try a different name or region.</div>`;
+      return;
+    }
+
+    content.innerHTML = `<div class="grid">${rows.map(renderCard).join("")}</div>`;
+  }
+
+  function loadData(rawRows) {
+    ALL_ROWS = rawRows.map(normaliseRow).filter(r => r.club || r.name);
+    populateRegionFilter(ALL_ROWS);
+    renderList();
+  }
+
+  function loadSample(reason) {
+    const content = document.getElementById("content");
+    const notice = `<div class="error" style="margin-bottom:14px;">${reason} Showing sample data below &mdash; add your published CSV link in the script to go live.</div>`;
+    loadData(SAMPLE_ROWS);
+    content.innerHTML = notice + content.innerHTML;
+  }
+
+  if (SHEET_CSV_URL.startsWith("http")) {
+    Papa.parse(SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => loadData(results.data),
+      error: () => loadSample("Couldn't load the live sheet.")
+    });
+  } else {
+    loadSample("No live data source configured yet.");
+  }
+
+  document.getElementById("search").addEventListener("input", renderList);
+  document.getElementById("regionFilter").addEventListener("change", renderList);
+</script>
+
+</body>
+</html>
