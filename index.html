@@ -1348,7 +1348,6 @@
 
     const hideEmail = entry["_hideEmail"] === "true" || entry["_hideEmail"] === true;
     const hidePhone = entry["_hidePhone"] === "true" || entry["_hidePhone"] === true;
-    const hideAddress = entry["_hideAddress"] === "true" || entry["_hideAddress"] === true;
 
     body.innerHTML = `
       <form id="editForm">
@@ -1365,10 +1364,6 @@
           <label class="edit-checkbox-row">
             <input type="checkbox" id="hidePhoneCheck" ${hidePhone ? "checked" : ""}>
             Hide my phone number from the directory
-          </label>
-          <label class="edit-checkbox-row">
-            <input type="checkbox" id="hideAddressCheck" ${hideAddress ? "checked" : ""}>
-            Hide my club's address from the directory
           </label>
         </div>
 
@@ -1416,7 +1411,6 @@
 
     updates["_hideEmail"] = document.getElementById("hideEmailCheck").checked ? "true" : "false";
     updates["_hidePhone"] = document.getElementById("hidePhoneCheck").checked ? "true" : "false";
-    updates["_hideAddress"] = document.getElementById("hideAddressCheck").checked ? "true" : "false";
 
     const btn = document.getElementById("editSaveBtn");
     btn.disabled = true;
