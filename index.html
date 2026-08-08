@@ -96,12 +96,53 @@
   }
 
   /* ---------- Controls ---------- */
+  .view-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 22px;
+  }
+
+  .view-tab {
+    padding: 9px 18px;
+    border-radius: 100px 100px 0 0;
+    border: none;
+    background: rgba(245,243,236,0.15);
+    color: var(--chalk);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+  }
+
+  .view-tab.active {
+    background: #fff;
+    color: var(--pitch-dark);
+  }
+
   .controls {
     max-width: 1080px;
     margin: -26px auto 0;
     padding: 0 24px;
     position: relative;
     z-index: 2;
+  }
+
+  .availability-intro {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
+    flex: 1 1 auto;
+  }
+
+  .availability-post-btn {
+    width: auto;
+    margin-top: 0;
+    padding: 10px 20px;
+    flex-shrink: 0;
   }
 
   .controls-card {
@@ -618,6 +659,78 @@
     font-size: 13px;
   }
 
+  .date-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(217,164,65,0.18);
+    color: var(--amber-dark);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 5px 6px 5px 10px;
+    border-radius: 100px;
+  }
+
+  .date-chip-remove {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+  }
+
+  .date-add-row, .date-weekly-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .date-add-row input, .date-weekly-row input[type="date"] {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--chalk);
+  }
+
+  .date-weekly-row input[type="number"] {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 13.5px;
+    font-family: inherit;
+    background: var(--chalk);
+  }
+
+  .date-add-btn {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--pitch);
+    background: #fff;
+    color: var(--pitch);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .date-add-btn:hover {
+    background: var(--pitch);
+    color: #fff;
+  }
+
   .edit-checkbox-row {
     display: flex;
     align-items: center;
@@ -732,6 +845,11 @@
     <p class="hero-sub">Contacts, venues and matchday facilities for every club in the group. Search by name or club, or filter by region and age group.</p>
     <button id="editListingBtn" class="edit-listing-btn">Edit my listing</button>
     <button id="logoutBtn" class="edit-listing-btn logout-btn">Log out</button>
+
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabDirectory">Coaches Directory</button>
+      <button class="view-tab" id="tabAvailability">Looking for a Fixture</button>
+    </div>
   </div>
 </header>
 
@@ -747,8 +865,18 @@
   </div>
 </div>
 
+<div id="availabilityPanelOverlay" class="edit-overlay" hidden>
+  <div class="edit-panel">
+    <div class="edit-panel-header">
+      <h2>Post your availability</h2>
+      <button id="closeAvailabilityPanel" class="edit-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="availabilityPanelBody"></div>
+  </div>
+</div>
+
 <div class="controls">
-  <div class="controls-card">
+  <div class="controls-card" id="directoryControls">
     <div class="search-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B2430" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="search" type="text" placeholder="Search by name or club..." autocomplete="off">
@@ -762,11 +890,18 @@
     <select id="seasonFilter"></select>
     <span class="count-label" id="countLabel"></span>
   </div>
+  <div class="controls-card" id="availabilityControls" hidden>
+    <p class="availability-intro">Coaches and clubs with free dates looking for a match. Get in touch directly.</p>
+    <button id="postAvailabilityBtn" class="edit-save-btn availability-post-btn">Post my availability</button>
+  </div>
 </div>
 
 <main>
   <div id="content">
     <div class="empty">Loading directory&hellip;</div>
+  </div>
+  <div id="availabilityContent" hidden>
+    <div class="empty">Loading availability&hellip;</div>
   </div>
 </main>
 
@@ -1634,6 +1769,263 @@
   });
   document.getElementById("closeSignupPanel").addEventListener("click", () => {
     document.getElementById("signupOverlay").hidden = true;
+  });
+
+  // ---------------------------------------------------------------
+  // Fixture availability board
+  // ---------------------------------------------------------------
+  let AVAILABILITY_LOADED = false;
+
+  function formatDateNice(isoDate) {
+    const d = new Date(isoDate + "T00:00:00");
+    if (isNaN(d)) return isoDate;
+    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  }
+
+  function renderAvailabilityCard(r) {
+    const dates = (r["Available dates"] || "").split(",").map(d => d.trim()).filter(Boolean);
+    const dateChips = dates.map(d => `<span class="chip on">${escapeHtml(formatDateNice(d))}</span>`).join("");
+    const ageGroups = r["Availability age groups"] || "";
+    const note = r["Availability note"] || "";
+
+    return `
+      <article class="card">
+        <div class="card-top">
+          <h2 class="club-name">${escapeHtml(r["Club name"] || "")}</h2>
+          ${ageGroups ? `<span class="region-tag age-tag">${escapeHtml(ageGroups)}</span>` : ""}
+        </div>
+        <p class="coach-line"><strong>${escapeHtml(r["Full name"] || "")}</strong></p>
+        <div class="contact-row">
+          ${r["Mobile phone number"] ? `<a href="tel:${escapeHtml((r["Mobile phone number"]||"").replace(/\s+/g,""))}">${escapeHtml(r["Mobile phone number"])}</a>` : ""}
+          ${r["Email address"] ? `<a href="mailto:${escapeHtml(r["Email address"])}">${escapeHtml(r["Email address"])}</a>` : ""}
+        </div>
+        <div class="chips">${dateChips}</div>
+        ${note ? `<div class="notes">${escapeHtml(note)}</div>` : ""}
+      </article>
+    `;
+  }
+
+  async function loadAvailability() {
+    const content = document.getElementById("availabilityContent");
+    content.innerHTML = `<div class="empty">Loading availability&hellip;</div>`;
+
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/availability`);
+      const rows = await res.json();
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        content.innerHTML = `<div class="empty">No one's posted free dates yet. Be the first.</div>`;
+        return;
+      }
+
+      content.innerHTML = `<div class="grid">${rows.map(renderAvailabilityCard).join("")}</div>`;
+    } catch (err) {
+      content.innerHTML = `<div class="empty">Couldn't load availability right now. Try again shortly.</div>`;
+    }
+  }
+
+  function switchToDirectoryTab() {
+    document.getElementById("tabDirectory").classList.add("active");
+    document.getElementById("tabAvailability").classList.remove("active");
+    document.getElementById("directoryControls").hidden = false;
+    document.getElementById("availabilityControls").hidden = true;
+    document.getElementById("content").hidden = false;
+    document.getElementById("availabilityContent").hidden = true;
+  }
+
+  function switchToAvailabilityTab() {
+    document.getElementById("tabDirectory").classList.remove("active");
+    document.getElementById("tabAvailability").classList.add("active");
+    document.getElementById("directoryControls").hidden = true;
+    document.getElementById("availabilityControls").hidden = false;
+    document.getElementById("content").hidden = true;
+    document.getElementById("availabilityContent").hidden = false;
+
+    if (!AVAILABILITY_LOADED) {
+      AVAILABILITY_LOADED = true;
+      loadAvailability();
+    }
+  }
+
+  document.getElementById("tabDirectory").addEventListener("click", switchToDirectoryTab);
+  document.getElementById("tabAvailability").addEventListener("click", switchToAvailabilityTab);
+
+  function renderAvailabilityForm() {
+    const body = document.getElementById("availabilityPanelBody");
+    const ageOptions = ["U6","U7","U8","U9","U10","U11","U12","U13","U14","U15","U16","U17","U18","Colts"];
+
+    body.innerHTML = `
+      <form id="availabilityForm">
+        <div class="edit-field">
+          <label>Which age group(s) are free?</label>
+          <div class="checkbox-grid" id="avail_age_group">
+            ${ageOptions.map(a => `<label class="edit-checkbox-row"><input type="checkbox" value="${a}"> ${a}</label>`).join("")}
+          </div>
+        </div>
+
+        <div class="edit-field">
+          <label>Free dates</label>
+          <p class="edit-field-note">Add each date you're free. Use "Add weekly dates" to quickly add a run of Sundays (or any day) in a row.</p>
+          <div id="dateChipList" class="date-chip-list"></div>
+          <div class="date-add-row">
+            <input type="date" id="singleDateInput">
+            <button type="button" class="date-add-btn" id="addSingleDateBtn">Add date</button>
+          </div>
+          <div class="date-weekly-row">
+            <input type="date" id="weeklyStartDate">
+            <input type="number" id="weeklyCount" min="1" max="12" value="4" style="width:70px;">
+            <span class="edit-field-note" style="margin:0;">weekly dates</span>
+            <button type="button" class="date-add-btn" id="addWeeklyDatesBtn">Add weekly dates</button>
+          </div>
+        </div>
+
+        <div class="edit-field">
+          <label for="avail_note">Anything else? (optional)</label>
+          <textarea id="avail_note" placeholder="e.g. Looking for a friendly, happy to travel within 20 miles"></textarea>
+        </div>
+
+        <button type="submit" class="edit-save-btn" id="availabilitySaveBtn">Post my availability</button>
+        <div id="availabilityStatus"></div>
+      </form>
+
+      <div class="edit-danger-zone">
+        <button type="button" class="edit-remove-btn" id="removeAvailabilityBtn">Remove my posted availability</button>
+      </div>
+    `;
+
+    const selectedDates = new Set();
+
+    function renderDateChips() {
+      const list = document.getElementById("dateChipList");
+      const sorted = [...selectedDates].sort();
+      list.innerHTML = sorted.map(d => `
+        <span class="date-chip">${escapeHtml(formatDateNice(d))} <button type="button" data-date="${d}" class="date-chip-remove">&times;</button></span>
+      `).join("") || `<p class="edit-field-note" style="margin:0;">No dates added yet.</p>`;
+
+      list.querySelectorAll(".date-chip-remove").forEach(btn => {
+        btn.addEventListener("click", () => {
+          selectedDates.delete(btn.dataset.date);
+          renderDateChips();
+        });
+      });
+    }
+
+    renderDateChips();
+
+    document.getElementById("addSingleDateBtn").addEventListener("click", () => {
+      const val = document.getElementById("singleDateInput").value;
+      if (val) {
+        selectedDates.add(val);
+        renderDateChips();
+        document.getElementById("singleDateInput").value = "";
+      }
+    });
+
+    document.getElementById("addWeeklyDatesBtn").addEventListener("click", () => {
+      const start = document.getElementById("weeklyStartDate").value;
+      const count = parseInt(document.getElementById("weeklyCount").value, 10) || 0;
+      if (!start || count < 1) return;
+
+      const startDate = new Date(start + "T00:00:00");
+      for (let i = 0; i < count; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i * 7);
+        selectedDates.add(d.toISOString().slice(0, 10));
+      }
+      renderDateChips();
+    });
+
+    document.getElementById("availabilityForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const session = getSession();
+      if (!session) {
+        alert("You've been signed out. Refresh the page and sign in again.");
+        return;
+      }
+
+      const statusEl = document.getElementById("availabilityStatus");
+
+      if (selectedDates.size === 0) {
+        statusEl.textContent = "Add at least one date.";
+        statusEl.className = "edit-status error";
+        return;
+      }
+
+      const ageGroups = [...document.querySelectorAll('#avail_age_group input:checked')].map(el => el.value);
+      const btn = document.getElementById("availabilitySaveBtn");
+      btn.disabled = true;
+      btn.textContent = "Posting...";
+
+      try {
+        const res = await fetch(`${WORKER_BASE_URL}/post-availability`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.sessionToken}`,
+          },
+          body: JSON.stringify({
+            dates: [...selectedDates],
+            ageGroups,
+            note: document.getElementById("avail_note").value.trim(),
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          statusEl.textContent = "Posted. Other coaches can now see your free dates.";
+          statusEl.className = "edit-status success";
+          AVAILABILITY_LOADED = false;
+          setTimeout(() => {
+            document.getElementById("availabilityPanelOverlay").hidden = true;
+            switchToAvailabilityTab();
+          }, 1100);
+        } else {
+          statusEl.textContent = data.error || "Couldn't post your availability.";
+          statusEl.className = "edit-status error";
+          btn.disabled = false;
+          btn.textContent = "Post my availability";
+        }
+      } catch (err) {
+        statusEl.textContent = "Couldn't reach the server. Check your connection and try again.";
+        statusEl.className = "edit-status error";
+        btn.disabled = false;
+        btn.textContent = "Post my availability";
+      }
+    });
+
+    document.getElementById("removeAvailabilityBtn").addEventListener("click", async () => {
+      const session = getSession();
+      if (!session) {
+        alert("You've been signed out. Refresh the page and sign in again.");
+        return;
+      }
+      if (!confirm("Remove your posted availability? Other coaches will no longer see it.")) return;
+
+      try {
+        await fetch(`${WORKER_BASE_URL}/remove-availability`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${session.sessionToken}` },
+        });
+        AVAILABILITY_LOADED = false;
+        document.getElementById("availabilityPanelOverlay").hidden = true;
+        switchToAvailabilityTab();
+      } catch (err) {
+        alert("Couldn't reach the server. Try again shortly.");
+      }
+    });
+  }
+
+  document.getElementById("postAvailabilityBtn").addEventListener("click", () => {
+    const session = getSession();
+    if (!session) {
+      alert("Sign in first to post your availability.");
+      return;
+    }
+    document.getElementById("availabilityPanelOverlay").hidden = false;
+    renderAvailabilityForm();
+  });
+
+  document.getElementById("closeAvailabilityPanel").addEventListener("click", () => {
+    document.getElementById("availabilityPanelOverlay").hidden = true;
   });
 </script>
 
