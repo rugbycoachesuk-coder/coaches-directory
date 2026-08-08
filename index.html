@@ -289,6 +289,22 @@
   }
 
   .contact-row a { text-decoration: none; font-weight: 600; color: var(--pitch); }
+
+  .request-contact-btn {
+    background: none;
+    border: 1px solid var(--pitch);
+    color: var(--pitch);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+  }
+
+  .request-contact-btn:hover {
+    background: var(--pitch);
+    color: #fff;
+  }
   .contact-row a:hover { text-decoration: underline; }
 
   .venue {
@@ -875,6 +891,16 @@
   </div>
 </div>
 
+<div id="contactRequestOverlay" class="edit-overlay" hidden>
+  <div class="edit-panel">
+    <div class="edit-panel-header">
+      <h2>Request contact</h2>
+      <button id="closeContactRequestPanel" class="edit-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="contactRequestBody"></div>
+  </div>
+</div>
+
 <div class="controls">
   <div class="controls-card" id="directoryControls">
     <div class="search-wrap">
@@ -1082,7 +1108,8 @@
     dogs: ["dogs welcome"],
     surface: ["pitch surface"],
     notes: ["anything visiting teams"],
-    consent: ["consent"]
+    consent: ["consent"],
+    contactId: ["_contactid"]
   };
 
   function findValue(row, keys) {
@@ -1141,6 +1168,7 @@
         <div class="contact-row">
           ${r.phone ? `<a href="tel:${escapeHtml(r.phone.replace(/\s+/g,""))}">${escapeHtml(r.phone)}</a>` : ""}
           ${r.email ? `<a href="mailto:${escapeHtml(r.email)}">${escapeHtml(r.email)}</a>` : ""}
+          ${!r.phone && !r.email && r.contactId ? `<button type="button" class="request-contact-btn" data-contact-id="${escapeHtml(r.contactId)}">Request contact</button>` : ""}
         </div>
         ${r.venue || r.address ? `
         <p class="venue">
@@ -1798,6 +1826,7 @@
         <div class="contact-row">
           ${r["Mobile phone number"] ? `<a href="tel:${escapeHtml((r["Mobile phone number"]||"").replace(/\s+/g,""))}">${escapeHtml(r["Mobile phone number"])}</a>` : ""}
           ${r["Email address"] ? `<a href="mailto:${escapeHtml(r["Email address"])}">${escapeHtml(r["Email address"])}</a>` : ""}
+          ${!r["Mobile phone number"] && !r["Email address"] && r["_contactId"] ? `<button type="button" class="request-contact-btn" data-contact-id="${escapeHtml(r["_contactId"])}">Request contact</button>` : ""}
         </div>
         <div class="chips">${dateChips}</div>
         ${note ? `<div class="notes">${escapeHtml(note)}</div>` : ""}
@@ -2026,6 +2055,82 @@
 
   document.getElementById("closeAvailabilityPanel").addEventListener("click", () => {
     document.getElementById("availabilityPanelOverlay").hidden = true;
+  });
+
+  // ---------------------------------------------------------------
+  // Request contact
+  // ---------------------------------------------------------------
+  function renderContactRequestForm(contactId) {
+    const body = document.getElementById("contactRequestBody");
+    body.innerHTML = `
+      <form id="contactRequestForm">
+        <p class="edit-field-note">Their contact details are private. Send a message and they can reply directly to your email.</p>
+        <div class="edit-field">
+          <label for="cr_name">Your name *</label>
+          <input type="text" id="cr_name" required>
+        </div>
+        <div class="edit-field">
+          <label for="cr_email">Your email *</label>
+          <input type="email" id="cr_email" required>
+        </div>
+        <div class="edit-field">
+          <label for="cr_message">Message *</label>
+          <textarea id="cr_message" required placeholder="e.g. Hi, we're looking for a fixture on..."></textarea>
+        </div>
+        <div style="position:absolute; left:-9999px;" aria-hidden="true">
+          <label for="cr_hp">Leave this blank</label>
+          <input type="text" id="cr_hp" tabindex="-1" autocomplete="off">
+        </div>
+        <button type="submit" class="edit-save-btn" id="contactRequestSubmitBtn">Send message</button>
+        <div id="contactRequestStatus"></div>
+      </form>
+    `;
+
+    document.getElementById("contactRequestForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById("contactRequestStatus");
+      const btn = document.getElementById("contactRequestSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+
+      try {
+        const res = await fetch(`${WORKER_BASE_URL}/request-contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contactId,
+            name: document.getElementById("cr_name").value.trim(),
+            replyEmail: document.getElementById("cr_email").value.trim(),
+            message: document.getElementById("cr_message").value.trim(),
+            _hp: document.getElementById("cr_hp").value,
+          }),
+        });
+        const data = await res.json();
+        statusEl.textContent = data.message || "Message sent.";
+        statusEl.className = "edit-status success";
+        setTimeout(() => {
+          document.getElementById("contactRequestOverlay").hidden = true;
+        }, 1400);
+      } catch (err) {
+        statusEl.textContent = "Couldn't reach the server. Check your connection and try again.";
+        statusEl.className = "edit-status error";
+        btn.disabled = false;
+        btn.textContent = "Send message";
+      }
+    });
+  }
+
+  // Event delegation: card buttons are rendered dynamically, so listen
+  // on a stable ancestor rather than each button individually.
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".request-contact-btn");
+    if (!btn) return;
+    document.getElementById("contactRequestOverlay").hidden = false;
+    renderContactRequestForm(btn.dataset.contactId);
+  });
+
+  document.getElementById("closeContactRequestPanel").addEventListener("click", () => {
+    document.getElementById("contactRequestOverlay").hidden = true;
   });
 </script>
 
