@@ -270,6 +270,16 @@
     color: var(--pitch-dark);
   }
 
+  .region-tag.drive-near {
+    background: #2E7D46;
+    color: #fff;
+  }
+
+  .region-tag.drive-far {
+    background: #B4232C;
+    color: #fff;
+  }
+
   .coach-line {
     font-size: 14.5px;
     color: var(--ink-soft);
@@ -947,6 +957,7 @@
   function showSite() {
     document.getElementById("gate").style.display = "none";
     document.getElementById("siteContent").hidden = false;
+    fetchDriveTimes();
   }
 
   function getRememberedAccess() {
@@ -1154,12 +1165,14 @@
     if (r.surface) facilities.push(chip(r.surface, true));
 
     const mapsUrl = r.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.address)}` : "";
+    const driveMinutes = r.contactId ? DRIVE_TIMES[r.contactId] : undefined;
 
     return `
       <article class="card">
         <div class="card-top">
           <h2 class="club-name">${escapeHtml(r.club)}</h2>
           <div class="tag-group">
+            ${typeof driveMinutes === "number" ? `<span class="region-tag drive-tag ${driveMinutes <= 60 ? "drive-near" : "drive-far"}">&#128663; ${driveMinutes} min</span>` : ""}
             ${r.age ? `<span class="region-tag age-tag">${escapeHtml(r.age)}</span>` : ""}
             ${r.region ? `<span class="region-tag">${escapeHtml(r.region)}</span>` : ""}
           </div>
@@ -1183,6 +1196,25 @@
   }
 
   let ALL_ROWS = [];
+  let DRIVE_TIMES = {};
+
+  async function fetchDriveTimes() {
+    const session = getSession();
+    if (!session) return;
+
+    try {
+      const res = await fetch(`${WORKER_BASE_URL}/drive-times`, {
+        headers: { "Authorization": `Bearer ${session.sessionToken}` },
+      });
+      const data = await res.json();
+      if (data.ok && data.times) {
+        DRIVE_TIMES = data.times;
+        renderList(); // re-render so cards pick up the new drive times
+      }
+    } catch (err) {
+      // Fail quietly - drive times are a nice-to-have, not essential.
+    }
+  }
 
   function populateRegionFilter(rows) {
     const select = document.getElementById("regionFilter");
